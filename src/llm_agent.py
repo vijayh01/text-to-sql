@@ -14,11 +14,6 @@ from constants import LLM_MODEL_NAME
 import streamlit as st
 
 OPENAI_API_KEY = st.secrets["openai"]["OPENAI_API_KEY"]
-USER = st.secrets["database"]["USER"]
-PASSWORD = st.secrets["database"]["PASSWORD"]
-HOST = st.secrets["database"]["HOST"]
-DATABASE = st.secrets["database"]["DATABASE"]
-PORT = st.secrets["database"]["PORT"]
 
 CUSTOM_SUFFIX = """Begin!
 
@@ -48,8 +43,6 @@ chat_openai_model_kwargs = {
     "frequency_penalty": 0.0,
     "presence_penalty": -1,
 }
-PASSWORD = urllib.parse.quote_plus(PASSWORD)
-db = SQLDatabase.from_uri(f"mysql+pymysql://{USER}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}")
 
 def get_chat_openai(model_name):
     """
@@ -133,38 +126,49 @@ def initialize_python_agent(agent_llm_name: str = LLM_MODEL_NAME):
     return agent_executor
 
 
-def initialize_sql_agent(tool_llm_name: str = LLM_MODEL_NAME, agent_llm_name: str = LLM_MODEL_NAME):
-    """
-    Create an agent for SQL-related tasks.
-
-    Args:
-        tool_llm_name (str): The name or identifier of the language model for SQL toolkit.
-        agent_llm_name (str): The name or identifier of the language model for the agent.
-
-    Returns:
-        Agent: An agent configured for SQL-related tasks.
-
-    """
-    # agent_tools = sql_agent_tools()
-    llm_agent = get_agent_llm(agent_llm_name)
-    toolkit = get_sql_toolkit(tool_llm_name)
-    message_history = SQLChatMessageHistory(
-        session_id="my-session",
-        connection_string=f"mysql+pymysql://{USER}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}",
-        table_name="message_store",
-        session_id_field_name="session_id"
-    )
-    memory = ConversationBufferMemory(memory_key="chat_history", input_key='input', chat_memory=message_history, return_messages=False)
-
-    agent = create_sql_agent(
-        llm=llm_agent,
-        toolkit=toolkit,
-        agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-        input_variables=["input", "agent_scratchpad", "chat_history"],
-        suffix=CUSTOM_SUFFIX,
-        memory=memory,
-        agent_executor_kwargs={"memory": memory},
-        verbose=True,
-        handle_parsing_errors=True
-    )
-    return agent
+def initialize_sql_agent(db_config):
+    """Initialize SQL agent with proper validation"""
+    required_fields = ['USER', 'PASSWORD', 'HOST', 'DATABASE', 'PORT']
+    
+    # Validate config
+    if not db_config or not isinstance(db_config, dict):
+        raise ValueError("Invalid database configuration")
+        
+    # Check required fields
+    for field in required_fields:
+        if field not in db_config or not db_config[field]:
+            raise ValueError(f"Missing required field: {field}")
+    
+    try:
+        # Initialize LLM first
+        llm = ChatOpenAI(
+            temperature=0,
+            model=LLM_MODEL_NAME,
+            openai_api_key=OPENAI_API_KEY
+        )
+        
+        # Create database connection
+        password = urllib.parse.quote_plus(db_config['PASSWORD'])
+        connection_string = (
+            f"mysql+pymysql://{db_config['USER']}:{password}@"
+            f"{db_config['HOST']}:{db_config['PORT']}/{db_config['DATABASE']}"
+        )
+        
+        db = SQLDatabase.from_uri(connection_string)
+        
+        # Create toolkit with LLM
+        toolkit = SQLDatabaseToolkit(
+            db=db,
+            llm=llm
+        )
+        
+        # Create and return agent
+        return create_sql_agent(
+            llm=llm,
+            toolkit=toolkit,
+            agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+            verbose=True,
+            handle_parsing_errors=True
+        )
+    except Exception as e:
+        raise ValueError(f"Failed to initialize SQL agent: {str(e)}")
