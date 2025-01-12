@@ -3,17 +3,14 @@ from langchain import hub
 from langchain.agents import AgentExecutor, create_openai_functions_agent
 from langchain.agents import create_sql_agent
 from langchain.agents.agent_types import AgentType
-from langchain.memory import ConversationBufferMemory
+from langchain.memory import ConversationBufferMemory 
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
-from langchain_community.chat_message_histories import SQLChatMessageHistory
+from langchain_community.chat_message_histories import SQLChatMessageHistory 
 from langchain_community.utilities import SQLDatabase
 from langchain_experimental.tools import PythonREPLTool
-#from langchain_openai import ChatOpenAI
 from langchain.chat_models import ChatOpenAI
 from constants import LLM_MODEL_NAME
 import streamlit as st
-
-OPENAI_API_KEY = st.secrets["openai"]["OPENAI_API_KEY"]
 
 CUSTOM_SUFFIX = """Begin!
 
@@ -33,6 +30,8 @@ My final response should STRICTLY be the output of SQL query.
 {agent_scratchpad}
 """
 
+OPENAI_API_KEY = st.secrets["openai"]["OPENAI_API_KEY"]
+
 langchain_chat_kwargs = {
     "temperature": 0,
     "max_tokens": 4000,
@@ -47,13 +46,10 @@ chat_openai_model_kwargs = {
 def get_chat_openai(model_name):
     """
     Returns an instance of the ChatOpenAI class initialized with the specified model name.
-
     Args:
         model_name (str): The name of the model to use.
-
     Returns:
         ChatOpenAI: An instance of the ChatOpenAI class.
-
     """
     llm = ChatOpenAI(
         model_name=model_name,
@@ -66,14 +62,12 @@ def get_chat_openai(model_name):
 def get_sql_toolkit(tool_llm_name: str):
     """
     Instantiates a SQLDatabaseToolkit object with the specified language model.
-
     This function creates a SQLDatabaseToolkit object configured with a language model
     obtained by the provided model name. The SQLDatabaseToolkit facilitates SQL query
     generation and interaction with a database.
 
     Args:
         tool_llm_name (str): The name or identifier of the language model to be used.
-
     Returns:
         SQLDatabaseToolkit: An instance of SQLDatabaseToolkit initialized with the provided language model.
     """
@@ -88,7 +82,6 @@ def get_agent_llm(agent_llm_name: str):
 
     Args:
         agent_llm_name (str): The name or identifier of the language model for the agent.
-
     Returns:
         ChatOpenAI: A language model agent configured for conversational tasks.
     """
@@ -102,12 +95,10 @@ def initialize_python_agent(agent_llm_name: str = LLM_MODEL_NAME):
 
     Args:
         agent_llm_name (str): The name or identifier of the language model for the agent.
-
     Returns:
         AgentExecutor: An agent executor configured for Python-related tasks.
-
     """
-    instructions = """You are an agent designed to write a python code to answer questions.
+    instructions = """You are an agent designed to write python code to answer questions.
             You have access to a python REPL, which you can use to execute python code.
             If you get an error, debug your code and try again.
             You might know the answer without running any code, but you should still run the code to get the answer.
@@ -118,9 +109,9 @@ def initialize_python_agent(agent_llm_name: str = LLM_MODEL_NAME):
             Return the code <code> in the following
             format ```python <code>```
             """
-    tools = [PythonREPLTool()]
     base_prompt = hub.pull("langchain-ai/openai-functions-template")
     prompt = base_prompt.partial(instructions=instructions)
+    tools = [PythonREPLTool()]
     agent = create_openai_functions_agent(ChatOpenAI(model=agent_llm_name, temperature=0), tools, prompt)
     agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
     return agent_executor
@@ -162,11 +153,25 @@ def initialize_sql_agent(db_config):
             llm=llm
         )
         
+        message_history = SQLChatMessageHistory(
+            session_id="my-session",
+            connection_string = (
+            f"mysql+pymysql://{db_config['USER']}:{password}@"
+            f"{db_config['HOST']}:{db_config['PORT']}/{db_config['DATABASE']}"), #added recently
+            table_name="message_store",
+            session_id_field_name="session_id"
+        )
+        memory = ConversationBufferMemory(memory_key="chat_history", input_key='input', chat_memory=message_history, return_messages=False) #added recently
+
         # Create and return agent
         return create_sql_agent(
             llm=llm,
             toolkit=toolkit,
             agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+            input_variables=["input", "agent_scratchpad", "chat_history"], #added recently
+            suffix=CUSTOM_SUFFIX, #added recently
+            memory=memory, #added recently
+            agent_executor_kwargs={"memory": memory}, #added recently
             verbose=True,
             handle_parsing_errors=True
         )

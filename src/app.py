@@ -10,25 +10,133 @@ import urllib.parse
 from helper import display_code_plots, display_text_with_images
 from llm_agent import initialize_python_agent, initialize_sql_agent
 from constants import LLM_MODEL_NAME
-from sqlalchemy import create_engine, exc
+from sqlalchemy import create_engine, exc, text
 import pymysql
 import time
 
 OPENAI_API_KEY = st.secrets["openai"]["OPENAI_API_KEY"]
-
-# Configure Streamlit app page
 st.set_page_config(page_title="SQL and Python Agent")
 
-
-# Initialize all session state variables
-if 'db_config' not in st.session_state:
+# 1. Initialize session state.
+if "db_config" not in st.session_state:
     st.session_state.db_config = {
-        'USER': None,
-        'PASSWORD': None,
+        'USER': '',
+        'PASSWORD': '',
         'HOST': 'localhost',
-        'DATABASE': None,
+        'DATABASE': '',
         'PORT': '3306'
     }
+
+if "db_connected" not in st.session_state:
+    st.session_state.db_connected = False
+
+if 'databases' not in st.session_state:
+    st.session_state.databases = []
+
+# 2. Sidebar user inputs.
+st.sidebar.title("DATABASE CONFIGURATION")
+st.sidebar.subheader("Enter MySQL connection details:", divider=True)
+
+user = st.sidebar.text_input("User", value=st.session_state.db_config['USER'])
+password = st.sidebar.text_input("Password", type="password", value=st.session_state.db_config['PASSWORD'])
+host = st.sidebar.text_input("Host", value=st.session_state.db_config['HOST'])
+port = st.sidebar.text_input("Port", value=st.session_state.db_config['PORT'])
+
+# 3. Single dynamic button label.
+button_label = "Save and Connect" if not st.session_state.db_connected else "Update Connection"
+
+def test_connection(config):
+    """Check DB connectivity and, if successful, fetch all databases."""
+    try:
+        connection_string = (
+            f"mysql+pymysql://{config['USER']}:{urllib.parse.quote_plus(config['PASSWORD'])}"
+            f"@{config['HOST']}:{config['PORT']}/"
+        )
+        engine = create_engine(connection_string)
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+
+        # If we succeed, fetch list of databases for the dropdown
+        try:
+            connection = mysql.connector.connect(
+                host=config['HOST'],
+                user=config['USER'],
+                password=config['PASSWORD'],
+                port=config['PORT']
+            )
+            if connection.is_connected():
+                cursor = connection.cursor()
+                cursor.execute("SHOW DATABASES")
+                dbs = [db[0] for db in cursor.fetchall() 
+                       if db[0] not in ('sys', 'mysql','performance_schema','information_schema')]
+                cursor.close()
+                connection.close()
+                return True, dbs
+        except Error as e:
+            st.sidebar.error(f"Error fetching databases: {e}")
+            return False, []
+    except Exception as e:
+        st.sidebar.error(f"Connection test failed: {str(e)}")
+        return False, []
+    return False, []
+
+# 4. Single button to connect/update.
+if st.sidebar.button(button_label):
+    if all([user, password, host, port]):
+        new_config = {
+            'USER': user,
+            'PASSWORD': password,
+            'HOST': host,
+            'PORT': port,
+            # DATABASE will be selected from dropdown below, so leave it blank initially
+            'DATABASE': ''
+        }
+        ok, db_list = test_connection(new_config)
+        if ok:
+            st.session_state.db_config = new_config
+            st.session_state.db_connected = True
+            # Store database list in session for the dropdown
+            st.session_state.databases = db_list
+            st.sidebar.success("Connection test successful! Please select a database.")
+        else:
+            st.session_state.db_connected = False
+            st.session_state.databases = []
+    else:
+        st.sidebar.error("All fields are required")
+
+# 5. If connected, show the databases in a dropdown for selection.
+if st.session_state.db_connected and st.session_state.databases:
+    db_choice = st.sidebar.selectbox(
+        "Select Database",
+        options=st.session_state.databases,
+        index=st.session_state.databases.index(st.session_state.db_config['DATABASE'])
+        if st.session_state.db_config['DATABASE'] in st.session_state.databases else 0
+    )
+    
+    if db_choice and db_choice != st.session_state.db_config['DATABASE']:
+        # Update the config to the selected DB
+        st.session_state.db_config['DATABASE'] = db_choice
+        try:
+            st.session_state.sql_agent = initialize_sql_agent(st.session_state.db_config)
+            st.session_state.python_agent = initialize_python_agent()
+            st.sidebar.success(f"Connected to {db_choice}!")
+        except Exception as e:
+            st.session_state.db_config['DATABASE'] = ''
+            st.sidebar.error(f"Connection to {db_choice} failed: {str(e)}")
+
+# Main page
+st.title("SQL and Python Agent")
+st.write("This agent can help you with SQL queries and Python code for data analysis. Configure your MySQL database connection using the sidebar.")
+
+if st.session_state.db_connected and st.session_state.db_config['DATABASE']:
+    st.write(
+        f"Using database: `{st.session_state.db_config['DATABASE']}` "
+        f"at `{st.session_state.db_config['HOST']}:{st.session_state.db_config['PORT']}`"
+    )
+else:
+    st.warning("Not connected. Provide credentials and click the button in the sidebar.")
+
+# Initialize all session state variables
 if 'db_connection' not in st.session_state:
     st.session_state.db_connection = None
 if 'agent_memory_sql' not in st.session_state:
@@ -37,112 +145,6 @@ if 'agent_memory_python' not in st.session_state:
     st.session_state.agent_memory_python = None
 if 'connection_tested' not in st.session_state:
     st.session_state.connection_tested = False
-if 'databases' not in st.session_state:
-    st.session_state.databases = []
-
-# Database configuration inputs
-st.sidebar.title("MYSQL DB CONFIGURATION")
-st.sidebar.subheader("Enter connection details:")
-
-user = st.sidebar.text_input("User", 
-    value=st.session_state.db_config['USER'] if st.session_state.db_config['USER'] else '')
-password = st.sidebar.text_input("Password", type="password")
-host = st.sidebar.text_input("Host", 
-    value=st.session_state.db_config['HOST'] if st.session_state.db_config['HOST'] else 'localhost')
-port = st.sidebar.text_input("Port", 
-    value=st.session_state.db_config['PORT'] if st.session_state.db_config['PORT'] else '3306')
-
-def get_databases(config):
-    """Fetch available databases using connection details"""
-    try:
-        connection = mysql.connector.connect(
-            host=config['HOST'],
-            user=config['USER'],
-            password=config['PASSWORD'],
-            port=config['PORT']
-        )
-        if connection.is_connected():
-            cursor = connection.cursor()
-            cursor.execute("SHOW DATABASES")
-            databases = [db[0] for db in cursor.fetchall()]
-            cursor.close()
-            connection.close()
-            return databases
-    except Error as e:
-        st.sidebar.error(f"Error fetching databases: {e}")
-        return []
-    return []
-
-# Test connection and get databases
-if st.sidebar.button("Test Connection"):
-    if all([user, password, host, port]):
-        config = {
-            'USER': user,
-            'PASSWORD': password,
-            'HOST': host,
-            'PORT': port
-        }
-        st.session_state.databases = get_databases(config)
-        if st.session_state.databases:
-            st.sidebar.success("Connection successful! Select a database.")
-    else:
-        st.sidebar.error("All fields are required")
-
-# Database dropdown (only show if databases are fetched)
-if st.session_state.databases:
-    database = st.sidebar.selectbox(
-        "Select Database",
-        options=st.session_state.databases,
-        index=0 if st.session_state.databases else None
-    )
-    
-    # Save and connect button
-    if st.sidebar.button("Connect to Database"):
-        st.session_state.db_config = {
-            'USER': user,
-            'PASSWORD': password,
-            'HOST': host,
-            'DATABASE': database,
-            'PORT': port
-        }
-        try:
-            st.session_state.sql_agent = initialize_sql_agent(st.session_state.db_config)
-            st.session_state.python_agent = initialize_python_agent()
-            st.sidebar.success(f"Connected to {database}!")
-        except Exception as e:
-            st.sidebar.error(f"Connection failed: {str(e)}")
-
-def test_connection(config):
-    try:
-        connection_string = (
-            f"mysql+pymysql://{config['USER']}:{urllib.parse.quote_plus(config['PASSWORD'])}@"
-            f"{config['HOST']}:{config['PORT']}/{config['DATABASE']}"
-        )
-        engine = create_engine(connection_string)
-        with engine.connect() as conn:
-            conn.execute(text("SELECT 1"))
-        return True
-    except Exception as e:
-        st.sidebar.error(f"Connection test failed: {str(e)}")
-        return False
-
-if st.sidebar.button("Save and Connect"):
-    if all([user, password, host, database, port]):
-        st.session_state.db_config = {
-            'USER': user,
-            'PASSWORD': password,
-            'HOST': host,
-            'DATABASE': database,
-            'PORT': port
-        }
-        try:
-            st.session_state.sql_agent = initialize_sql_agent(st.session_state.db_config)
-            st.session_state.python_agent = initialize_python_agent()
-            st.sidebar.success("Connection successful!")
-        except Exception as e:
-            st.sidebar.error(f"Connection failed: {str(e)}")
-    else:
-        st.sidebar.error("All fields are required")
 
 # Add connection management functions
 def create_db_connection(config):
@@ -236,18 +238,18 @@ def generate_response(code_type, input_text):
     greetings = ['hello', 'hi', 'hey', 'help', 'what can you do']
     if input_text.lower() in greetings:
         return """Hello! I am a SQL and Python agent designed to help you with:
-        
-1. SQL queries and database analysis
-2. Python data visualization
-3. General database questions
+            1. SQL queries and database analysis
+            2. Python data visualization
+            3. General database questions
 
-To get started with database operations, please configure your database connection in the sidebar.
-You can also ask me general questions about SQL, Python, or data analysis!"""
+            To get started with database operations, please configure your database connection in the sidebar.
+            You can also ask me general questions about SQL, Python, or data analysis!
+        """
     
     # Check if database is configured
     if not st.session_state.get('sql_agent'):
         return "Please configure and connect to a database using the sidebar before running queries."
-    
+
     # Sanitize input
     local_prompt = unidecode.unidecode(input_text)
     
@@ -268,7 +270,7 @@ You can also ask me general questions about SQL, Python, or data analysis!"""
                 return "Unable to generate visualization - no valid data returned from query"
             
             # Generate visualization
-            viz_prompt = {"input": "Write a code in python to plot the following data\n\n" + local_response}
+            viz_prompt = {"input": "Write code in python to plot the following data\n\n" + local_response}
             return st.session_state.python_agent.invoke(viz_prompt)
             
         except Exception as e:
@@ -280,7 +282,7 @@ You can also ask me general questions about SQL, Python, or data analysis!"""
             return st.session_state.sql_agent.run(local_prompt)
         except Exception as e:
             print(f"SQL query error: {str(e)}")
-            return "Failed to execute SQL query"
+            return """Failed to execute SQL query. Ensure you have enough OpenAI API credits. This is most likely to be the issue."""
 
 
 def reset_conversation():
@@ -292,18 +294,6 @@ def reset_conversation():
         st.session_state.python_agent = st.session_state.agent_memory_python
     else:
         st.warning("Please configure database credentials first")
-
-
-# Display title and description
-st.title("SQL and Python Agent")
-st.write("This agent can help you with SQL queries and Python code for data analysis. Configure your MySQL database connection using the sidebar.")
-
-# Display connection status
-if "db_config" in st.session_state:
-    db_config = st.session_state.db_config
-    st.write(f"Using database: `{db_config['DATABASE']}` at `{db_config['HOST']}:{db_config['PORT']}`")
-else:
-    st.warning("Please save your database credentials in the sidebar.")
 
 col1, col2 = st.columns([3, 1])
 with col2:
@@ -322,10 +312,10 @@ for message in st.session_state.messages:
 # Accept user input
 if prompt := st.chat_input("Please ask your question:"):
     # Display user message in chat
-    with st.chat_message("user"):
+    with st.chat_message("user", avatar="🚀"):
         st.markdown(prompt)
     st.session_state.messages.append({"role": "user", "content": prompt})
-    keywords = ["plot", "graph", "chart", "diagram"]
+    keywords = ["plot", "graph", "chart", "diagram", "visualize", "visualisation", "show"]
     if any(keyword in prompt.lower() for keyword in keywords):
         prev_context = ""
         for msg in reversed(st.session_state.messages):
@@ -365,7 +355,7 @@ if prompt := st.chat_input("Please ask your question:"):
             response = generate_response("sql", f"{prompt}\n\nGiven previous agent responses:\n{prev_context}\n")
         else:
             response = generate_response("sql", prompt)
-        with st.chat_message("assistant"):
+        with st.chat_message("assistant", avatar="❇️"):
             display_text_with_images(response)
         st.session_state.messages.append({"role": "assistant", "content": response})
 
