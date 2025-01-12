@@ -17,7 +17,7 @@ import time
 OPENAI_API_KEY = st.secrets["openai"]["OPENAI_API_KEY"]
 st.set_page_config(page_title="SQL and Python Agent")
 
-# 1. Initialize session state.
+# 1. Initialize session state here.
 if "db_config" not in st.session_state:
     st.session_state.db_config = {
         'USER': '',
