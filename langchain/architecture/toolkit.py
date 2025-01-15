@@ -33,20 +33,17 @@ db = SQLDatabase(engine)
 # now get the language model
 if not os.environ.get("OPENAI_API_KEY"):
   os.environ["OPENAI_API_KEY"] = getpass.getpass("Enter API key for OpenAI: ")
-
 model = ChatOpenAI(model="gpt-4o-mini")
 
-# now get tookkit
+# now get toolkit
 toolkit = SQLDatabaseToolkit(db=db, llm=model)
 tools = toolkit.get_tools()
 print(tools)
 
 
 # use within an agent
-
 prompt_template = hub.pull("langchain-ai/sql-agent-system-prompt")
 assert len(prompt_template.messages) == 1
-
 print(prompt_template.input_variables)
 system_message = prompt_template.format(dialect="SQLite", top_k=5)
 
