@@ -13,7 +13,7 @@ st.sidebar.subheader("Enter MySQL connection details:", divider=True)
 
 
 # CHAT INPUT
-st.chat_input("Please ask your question:")
-# if prompt := st.chat_input("Please ask your question:"):
-#    with st.chat_message("user", avatar="🚀"):
-#      st.markdown(prompt)
+
+if prompt := st.chat_input("Please ask your question:"):
+   with st.chat_message("user", avatar="🚀"):
+     st.markdown(prompt)
