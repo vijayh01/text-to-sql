@@ -8,7 +8,6 @@ from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langchain_community.chat_message_histories import SQLChatMessageHistory 
 from langchain_community.utilities import SQLDatabase
 from langchain_experimental.tools import PythonREPLTool
-from langchain.chat_models import ChatOpenAI
 from langchain_deepseek import ChatDeepSeek
 from constants import LLM_MODEL_NAME
 import streamlit as st
@@ -119,7 +118,7 @@ def initialize_python_agent(agent_llm_name: str = LLM_MODEL_NAME):
     base_prompt = hub.pull("langchain-ai/openai-functions-template")
     prompt = base_prompt.partial(instructions=instructions)
     tools = [PythonREPLTool()]
-    agent = create_openai_functions_agent(get_chat_openai(LLM_MODEL_NAME), temperature=0), tools, prompt)
+    agent = create_openai_functions_agent(get_chat_openai(LLM_MODEL_NAME), tools, prompt)
     agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
     return agent_executor
 
