@@ -16,7 +16,7 @@ langchainhub==0.1.20
 langsmith==0.1.93
 
 # DeepSeek Integration
-langchain-deepseek
+langchain-deepseek-official==0.1.0
 
 # Essential Utilities
 protobuf==4.25.3
