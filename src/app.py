@@ -3,6 +3,8 @@ import sys
 import warnings
 import streamlit as st
 import unidecode
+import pymysql
+from pymysql import Error
 from langchain_community.utilities import SQLDatabase
 import urllib.parse
 from helper import display_code_plots, display_text_with_images
@@ -56,11 +58,13 @@ def test_connection(config):
 
         # If we succeed, fetch list of databases for the dropdown
         try:
-            connection = mysql.connector.connect(
+            connection = pymysql.connect(
                 host=config['HOST'],
                 user=config['USER'],
                 password=config['PASSWORD'],
-                port=config['PORT']
+                port=config['PORT'],
+                cursorclass=pymysql.cursors.DictCursor
+
             )
             if connection.is_connected():
                 cursor = connection.cursor()
