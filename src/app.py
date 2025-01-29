@@ -3,8 +3,6 @@ import sys
 import warnings
 import streamlit as st
 import unidecode
-import mysql.connector
-from mysql.connector import Error
 from langchain_community.utilities import SQLDatabase
 import urllib.parse
 from helper import display_code_plots, display_text_with_images
