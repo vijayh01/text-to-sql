@@ -1,25 +1,16 @@
-# Core
 streamlit==1.32.2
 python-dotenv==1.0.1
-
-# Database
 pymysql==1.1.1
 sqlalchemy==2.0.31
-
-# LangChain Ecosystem
-langchain-core==0.2.22
-langchain-community==0.2.5
-langchain-experimental==0.0.61
-langchain-openai==0.1.17
-langchain-text-splitters==0.2.1
-langchainhub==0.1.20
-langsmith==0.1.93
-
-# DeepSeek Integration
+langchain-core
+langchain-community
+langchain-experimental
+langchain-openai
+langchain-text-splitters
+langchainhub
+langsmith
 langchain-deepseek-official==0.1.0
 langchain-deepseek
-
-# Essential Utilities
 protobuf==4.25.3
 tiktoken==0.7.0
 numpy==1.26.4
