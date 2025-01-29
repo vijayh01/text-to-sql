@@ -69,6 +69,8 @@ langchain-community==0.2.5
 langchain-core==0.2.22
 langchain-experimental==0.0.61
 langchain-openai==0.1.17
+langchain-deepseek
+langchain-deepseek-official
 langchain-text-splitters==0.2.1
 langchainhub==0.1.20
 langsmith==0.1.93
