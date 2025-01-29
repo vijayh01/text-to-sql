@@ -3,6 +3,8 @@ import sys
 import time
 import warnings
 import streamlit as st
+import pandas as pd
+import plotly.express as px
 import unidecode
 import pymysql
 from pymysql import Error
@@ -325,17 +327,45 @@ if prompt := st.chat_input("Please ask your question:"):
                 display_text_with_images(response)
             st.session_state.messages.append({"role": "error", "content": response})
         else:
-            code = display_code_plots(response['output'])
+            # code = display_code_plots(response['output'])
+            # try:
+            #     code = f"import pandas as pd\n{code.replace('fig.show()', '')}"
+            #     code += "st.plotly_chart(fig, theme='streamlit', use_container_width=True)"
+            #     st.code(code)  # DISPLAY GENERATED CODE FOR INSPECTION
+            #     exec(code)
+            #     st.session_state.messages.append({"role": "plot", "content": code})
+            # except:
+            #     response = "Please try again with a re-phrased query and more context"
+            #     with st.chat_message("error"):
+            #         display_text_with_images(response)
+            #     st.session_state.messages.append({"role": "error", "content": response})
             try:
-                code = f"import pandas as pd\n{code.replace('fig.show()', '')}"
-                code += "st.plotly_chart(fig, theme='streamlit', use_container_width=True)"
-                exec(code)
-                st.session_state.messages.append({"role": "plot", "content": code})
-            except:
-                response = "Please try again with a re-phrased query and more context"
-                with st.chat_message("error"):
-                    display_text_with_images(response)
-                st.session_state.messages.append({"role": "error", "content": response})
+                # Extract code safely from response
+                if isinstance(response, dict) and 'output' in response:
+                    raw_code = response['output']
+                else:
+                    raw_code = str(response)
+
+                # Extract code block from markdown
+                code = display_code_plots(raw_code)
+                
+                # Add necessary imports and Streamlit integration
+                full_code = (
+                    f"import pandas as pd\n"
+                    f"import plotly.express as px\n"
+                    f"{code.replace('fig.show()', '')}\n"
+                    f"st.plotly_chart(fig, use_container_width=True)"
+                )
+                
+                # Execute with proper environment
+                exec(full_code, {'pd': pd, 'px': px, 'st': st})
+                
+                st.session_state.messages.append({"role": "plot", "content": full_code})
+                
+            except Exception as e:
+                error_msg = f"Visualization error: {str(e)}"
+                st.error(error_msg)
+                st.session_state.messages.append({"role": "error", "content": error_msg})
     else:
         if len(st.session_state.messages) > 1:
             context_length = 0
