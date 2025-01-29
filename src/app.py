@@ -6,6 +6,7 @@ import streamlit as st
 import unidecode
 import pymysql
 from pymysql import Error
+from sqlalchemy.sql import text
 from langchain_community.utilities import SQLDatabase
 import urllib.parse
 from helper import display_code_plots, display_text_with_images
@@ -277,8 +278,9 @@ def generate_response(code_type, input_text):
         try:
             return st.session_state.sql_agent.run(local_prompt)
         except Exception as e:
+            print(f"Full error details: {str(e)}")
             print(f"SQL query error: {str(e)}")
-            return """Failed to execute SQL query. Ensure you have enough DeepSeek API credits. This is most likely to be the issue."""
+            return f"""Failed to execute SQL query. Details: {str(e)}"""
 
 
 def reset_conversation():

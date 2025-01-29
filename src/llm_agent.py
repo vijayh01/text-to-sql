@@ -51,6 +51,7 @@ def get_chat_deepseek(model_name):
     """
     llm = ChatDeepSeek(
         model=model_name,
+        api_key=DEEPSEEK_API_KEY,
         model_kwargs=chat_deepseek_model_kwargs, 
         **langchain_chat_kwargs
     )
@@ -133,13 +134,7 @@ def initialize_sql_agent(db_config):
             raise ValueError(f"Missing required field: {field}")
     
     try:
-        # Initialize LLM first
-        # llm = get_chat_deepseek(LLM_MODEL_NAME)
-        llm = ChatDeepSeek(
-            temperature=0,
-            model=LLM_MODEL_NAME,
-            deepseek_api_key=DEEPSEEK_API_KEY
-        )
+        llm = get_chat_deepseek(LLM_MODEL_NAME)
         
         # Create database connection
         password = urllib.parse.quote_plus(db_config['PASSWORD'])
@@ -147,9 +142,11 @@ def initialize_sql_agent(db_config):
             f"mysql+pymysql://{db_config['USER']}:{password}@"
             f"{db_config['HOST']}:{db_config['PORT']}/{db_config['DATABASE']}"
         )
-        
+        # Connection validation
         db = SQLDatabase.from_uri(connection_string)
-        
+        with db._engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+            
         # Create toolkit with LLM
         toolkit = SQLDatabaseToolkit(
             db=db,
@@ -160,7 +157,7 @@ def initialize_sql_agent(db_config):
             session_id="my-session",
             connection_string = (
             f"mysql+pymysql://{db_config['USER']}:{password}@"
-            f"{db_config['HOST']}:{db_config['PORT']}/{db_config['DATABASE']}"), #added recently
+            f"{db_config['HOST']}:{db_config['PORT']}/{db_config['DATABASE']}"), 
             table_name="message_store",
             session_id_field_name="session_id"
         )
@@ -171,10 +168,10 @@ def initialize_sql_agent(db_config):
             llm=llm,
             toolkit=toolkit,
             agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-            input_variables=["input", "agent_scratchpad", "chat_history"], #added recently
-            suffix=CUSTOM_SUFFIX, #added recently
-            memory=memory, #added recently
-            agent_executor_kwargs={"memory": memory}, #added recently
+            input_variables=["input", "agent_scratchpad", "chat_history"], 
+            suffix=CUSTOM_SUFFIX, 
+            memory=memory, 
+            agent_executor_kwargs={"memory": memory}, 
             verbose=True,
             handle_parsing_errors=True
         )
