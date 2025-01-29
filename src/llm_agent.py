@@ -118,7 +118,11 @@ def initialize_python_agent(agent_llm_name: str = LLM_MODEL_NAME):
     base_prompt = hub.pull("langchain-ai/openai-functions-template")
     prompt = base_prompt.partial(instructions=instructions)
     tools = [PythonREPLTool()]
-    agent = create_openai_functions_agent(get_chat_openai(LLM_MODEL_NAME), tools, prompt)
+    agent = create_openai_functions_agent(
+        llm=get_chat_openai(LLM_MODEL_NAME),
+        tools=tools,
+        prompt=prompt
+    )    
     agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
     return agent_executor
 
