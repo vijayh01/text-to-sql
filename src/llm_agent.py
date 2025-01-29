@@ -219,10 +219,10 @@ def initialize_sql_agent(db_config):
             memory=memory, 
             agent_executor_kwargs={"memory": memory,
                                    "handle_parsing_errors": True,  
-                                   "return_intermediate_steps": True  
+                                   "return_intermediate_steps": False  
                                    }, 
             verbose=True,
-            handle_parsing_errors="Check your output and make sure it conforms!",
+            handle_parsing_errors=True, #"Check your output and make sure it conforms!",
             max_iterations=5
         )
     except Exception as e:

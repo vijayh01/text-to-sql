@@ -277,11 +277,16 @@ def generate_response(code_type, input_text):
             
     else:  
         try:
-            return st.session_state.sql_agent.run(local_prompt)
+            response = st.session_state.sql_agent.invoke({"input": local_prompt})
+            
+            if 'output' in response:
+                return response['output']
+            else:
+                return "Received unexpected response format from agent"
         except Exception as e:
-            print(f"Full error details: {str(e)}")
-            print(f"SQL query error: {str(e)}")
-            return f"""Failed to execute SQL query. Details: {str(e)}"""
+        print(f"Full error details: {str(e)}")
+        print(f"SQL query error: {str(e)}")
+        return f"""Failed to execute SQL query. Details: {str(e)}"""
 
 
 def reset_conversation():
