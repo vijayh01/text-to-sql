@@ -284,9 +284,9 @@ def generate_response(code_type, input_text):
             else:
                 return "Received unexpected response format from agent"
         except Exception as e:
-        print(f"Full error details: {str(e)}")
-        print(f"SQL query error: {str(e)}")
-        return f"""Failed to execute SQL query. Details: {str(e)}"""
+            print(f"Full error details: {str(e)}")
+            print(f"SQL query error: {str(e)}")
+            return f"""Failed to execute SQL query. Details: {str(e)}"""
 
 
 def reset_conversation():
