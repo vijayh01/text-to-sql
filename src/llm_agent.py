@@ -29,38 +29,30 @@ My final response should STRICTLY be the output of SQL query.
 
 {agent_scratchpad}
 """
-
 DEEPSEEK_API_KEY = st.secrets["deepseek"]["DEEPSEEK_API_KEY"]
-
 langchain_chat_kwargs = {
     "temperature": 0,
     "max_tokens": 4000,
     "verbose": True,
 }
-chat_openai_model_kwargs = {
+chat_deepseek_model_kwargs = {
     "top_p": 1.0,
     "frequency_penalty": 0.0,
     "presence_penalty": -1,
 }
 
-def get_chat_openai(model_name):
+def get_chat_deepseek(model_name):
     """
-    Returns an instance of the ChatOpenAI class initialized with the specified model name.
+    Returns an instance of the ChatDeepSeek class initialized with the specified model name.
     Args:
         model_name (str): The name of the model to use.
     Returns:
-        ChatOpenAI: An instance of the ChatOpenAI class.
+        ChatDeepSeek: An instance of the ChatDeepSeek class.
     """
-    # llm = ChatOpenAI(
-    #     model_name=model_name,
-    #     model_kwargs=chat_openai_model_kwargs,
-    #     **langchain_chat_kwargs
-    # )
-
     llm = ChatDeepSeek(
-    model=model_name,
-    model_kwargs=chat_openai_model_kwargs,
-    **langchain_chat_kwargs
+        model=model_name,
+        model_kwargs=chat_deepseek_model_kwargs, 
+        **langchain_chat_kwargs
     )
     return llm
 
@@ -77,7 +69,7 @@ def get_sql_toolkit(tool_llm_name: str):
     Returns:
         SQLDatabaseToolkit: An instance of SQLDatabaseToolkit initialized with the provided language model.
     """
-    llm_tool = get_chat_openai(model_name=tool_llm_name)
+    llm_tool = get_chat_deepseek(model_name=tool_llm_name)
     toolkit = SQLDatabaseToolkit(db=db, llm=llm_tool)
     return toolkit
 
@@ -89,9 +81,9 @@ def get_agent_llm(agent_llm_name: str):
     Args:
         agent_llm_name (str): The name or identifier of the language model for the agent.
     Returns:
-        ChatOpenAI: A language model agent configured for conversational tasks.
+        ChatDeepSeek: A language model agent configured for conversational tasks.
     """
-    llm_agent = get_chat_openai(model_name=agent_llm_name)
+    llm_agent = get_chat_deepseek(model_name=agent_llm_name)
     return llm_agent
 
 
@@ -119,7 +111,7 @@ def initialize_python_agent(agent_llm_name: str = LLM_MODEL_NAME):
     prompt = base_prompt.partial(instructions=instructions)
     tools = [PythonREPLTool()]
     agent = create_openai_functions_agent(
-        llm=get_chat_openai(LLM_MODEL_NAME),
+        llm=get_chat_deepseek(LLM_MODEL_NAME),
         tools=tools,
         prompt=prompt
     )    
@@ -142,12 +134,12 @@ def initialize_sql_agent(db_config):
     
     try:
         # Initialize LLM first
-        llm = get_chat_openai(LLM_MODEL_NAME)
-        # llm = ChatOpenAI(
-        #     temperature=0,
-        #     model=LLM_MODEL_NAME,
-        #     openai_api_key=OPENAI_API_KEY
-        # )
+        # llm = get_chat_deepseek(LLM_MODEL_NAME)
+        llm = ChatDeepSeek(
+            temperature=0,
+            model=LLM_MODEL_NAME,
+            deepseek_api_key=DEEPSEEK_API_KEY
+        )
         
         # Create database connection
         password = urllib.parse.quote_plus(db_config['PASSWORD'])

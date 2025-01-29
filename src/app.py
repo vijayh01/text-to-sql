@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import warnings
 import streamlit as st
 import unidecode
@@ -11,8 +12,7 @@ from helper import display_code_plots, display_text_with_images
 from llm_agent import initialize_python_agent, initialize_sql_agent
 from constants import LLM_MODEL_NAME
 from sqlalchemy import create_engine, exc, text
-import pymysql
-import time
+
 
 DEEPSEEK_API_KEY = st.secrets["deepseek"]["DEEPSEEK_API_KEY"]
 st.set_page_config(page_title="SQL and Python Agent")
