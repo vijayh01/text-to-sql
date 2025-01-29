@@ -14,7 +14,7 @@ from sqlalchemy import create_engine, exc, text
 import pymysql
 import time
 
-OPENAI_API_KEY = st.secrets["openai"]["OPENAI_API_KEY"]
+DEEPSEEK_API_KEY = st.secrets["deepseek"]["DEEPSEEK_API_KEY"]
 st.set_page_config(page_title="SQL and Python Agent")
 
 # 1. Initialize session state here.
@@ -209,7 +209,7 @@ parent_dir = os.path.join(current_dir, "..")
 sys.path.insert(0, parent_dir)
 
 # Set environment variables
-os.environ['OPENAI_API_KEY'] = OPENAI_API_KEY
+os.environ['DEEPSEEK_API_KEY'] = DEEPSEEK_API_KEY
 
 
 # Initialize session state

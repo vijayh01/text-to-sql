@@ -9,6 +9,7 @@ from langchain_community.chat_message_histories import SQLChatMessageHistory
 from langchain_community.utilities import SQLDatabase
 from langchain_experimental.tools import PythonREPLTool
 from langchain.chat_models import ChatOpenAI
+from langchain_deepseek import ChatDeepSeek
 from constants import LLM_MODEL_NAME
 import streamlit as st
 
@@ -30,7 +31,7 @@ My final response should STRICTLY be the output of SQL query.
 {agent_scratchpad}
 """
 
-OPENAI_API_KEY = st.secrets["openai"]["OPENAI_API_KEY"]
+DEEPSEEK_API_KEY = st.secrets["deepseek"]["DEEPSEEK_API_KEY"]
 
 langchain_chat_kwargs = {
     "temperature": 0,
@@ -51,10 +52,16 @@ def get_chat_openai(model_name):
     Returns:
         ChatOpenAI: An instance of the ChatOpenAI class.
     """
-    llm = ChatOpenAI(
-        model_name=model_name,
-        model_kwargs=chat_openai_model_kwargs,
-        **langchain_chat_kwargs
+    # llm = ChatOpenAI(
+    #     model_name=model_name,
+    #     model_kwargs=chat_openai_model_kwargs,
+    #     **langchain_chat_kwargs
+    # )
+
+    llm = ChatDeepSeek(
+    model=model_name,
+    model_kwargs=chat_openai_model_kwargs,
+    **langchain_chat_kwargs
     )
     return llm
 
@@ -112,7 +119,7 @@ def initialize_python_agent(agent_llm_name: str = LLM_MODEL_NAME):
     base_prompt = hub.pull("langchain-ai/openai-functions-template")
     prompt = base_prompt.partial(instructions=instructions)
     tools = [PythonREPLTool()]
-    agent = create_openai_functions_agent(ChatOpenAI(model=agent_llm_name, temperature=0), tools, prompt)
+    agent = create_openai_functions_agent(get_chat_openai(LLM_MODEL_NAME), temperature=0), tools, prompt)
     agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
     return agent_executor
 
@@ -132,11 +139,12 @@ def initialize_sql_agent(db_config):
     
     try:
         # Initialize LLM first
-        llm = ChatOpenAI(
-            temperature=0,
-            model=LLM_MODEL_NAME,
-            openai_api_key=OPENAI_API_KEY
-        )
+        llm = get_chat_openai(LLM_MODEL_NAME)
+        # llm = ChatOpenAI(
+        #     temperature=0,
+        #     model=LLM_MODEL_NAME,
+        #     openai_api_key=OPENAI_API_KEY
+        # )
         
         # Create database connection
         password = urllib.parse.quote_plus(db_config['PASSWORD'])
