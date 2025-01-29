@@ -15,13 +15,12 @@ from llm_agent import initialize_python_agent, initialize_sql_agent
 from constants import LLM_MODEL_NAME
 from sqlalchemy import create_engine, exc, text
 
-
 DEEPSEEK_API_KEY = st.secrets["deepseek"]["DEEPSEEK_API_KEY"]
 st.set_page_config(page_title="SQL and Python Agent")
 
 ### TEST DEEPSEEK API CONNECTION ###
-import os
 from langchain_deepseek import ChatDeepSeek
+
 def test_deepseek():
     client = ChatDeepSeek(
         api_key=DEEPSEEK_API_KEY,
@@ -30,21 +29,21 @@ def test_deepseek():
     )
     try:
         messages = [
-                ("system","You are a helpful assistant that translates English to French. Translate the user sentence.",),
-                ("human", "I love programming."),]
+            ("system", "You are a helpful assistant that translates English to French. Translate the user sentence."),
+            ("human", "I love programming.")
+        ]
         response = client.invoke(messages)
         print("API Response:", response)
         return True
     except Exception as e:
         print("API Error:", str(e))
         return False
+
 if test_deepseek():
     st.success("DeepSeek API connection successful!")
 else:
     st.error("DeepSeek API connection failed. Check your key and credits.")
 ### TEST DEEPSEEK API CONNECTION ###
-
-
 
 if "db_config" not in st.session_state:
     st.session_state.db_config = {
@@ -61,7 +60,7 @@ if "db_connected" not in st.session_state:
 if 'databases' not in st.session_state:
     st.session_state.databases = []
 
-# 2. Sidebar user inputs.
+# Sidebar user inputs
 st.sidebar.title("DATABASE CONFIGURATION")
 st.sidebar.subheader("Enter MySQL connection details:", divider=True)
 
@@ -70,7 +69,7 @@ password = st.sidebar.text_input("Password", type="password", value=st.session_s
 host = st.sidebar.text_input("Host", value=st.session_state.db_config['HOST'])
 port = st.sidebar.text_input("Port", value=st.session_state.db_config['PORT'])
 
-# 3. Single dynamic button label.
+# Single dynamic button label
 button_label = "Save and Connect" if not st.session_state.db_connected else "Update Connection"
 
 def test_connection(config):
@@ -96,7 +95,7 @@ def test_connection(config):
                 with connection.cursor() as cursor:
                     cursor.execute("SHOW DATABASES")
                     dbs = [db['Database'] for db in cursor.fetchall() 
-                        if db['Database'] not in ('sys', 'mysql','performance_schema','information_schema')]
+                           if db['Database'] not in ('sys', 'mysql', 'performance_schema', 'information_schema')]
                 return True, dbs
         except Error as e:
             st.sidebar.error(f"Error fetching databases: {e}")
@@ -224,7 +223,6 @@ sys.path.insert(0, parent_dir)
 
 os.environ['DEEPSEEK_API_KEY'] = DEEPSEEK_API_KEY
 
-
 if 'messages' not in st.session_state:
     st.session_state.messages = []
 
@@ -241,13 +239,15 @@ if 'db_config' in st.session_state:
 else:
     st.warning("Please configure database credentials first")
 
-
 def generate_response(code_type, input_text):
     """Generate responses for both general and database-specific queries"""
     
     greetings = ['hello', 'hi', 'hey', 'help', 'what can you do']
     if input_text.lower() in greetings:
-        return """Hello! I am a SQL and Python agent designed to help you with:SQL queries and database analysis, Python data visualization, and General database questions.To get started with database operations, please configure your database connection in the sidebar.You can also ask me general questions about SQL, Python, or data analysis!"""
+        return """Hello! I am a SQL and Python agent designed to help you with:
+        SQL queries and database analysis, Python data visualization, and General database questions.
+        To get started with database operations, please configure your database connection in the sidebar.
+        You can also ask me general questions about SQL, Python, or data analysis!"""
     
     if not st.session_state.get('sql_agent'):
         return "Please configure and connect to a database using the sidebar before running queries."
@@ -264,7 +264,7 @@ def generate_response(code_type, input_text):
             print("SQL Response->", local_response)
             
             exclusion_keywords = ["please provide", "don't know", "more context", 
-                                "provide more", "vague request", "no results"]
+                                  "provide more", "vague request", "no results"]
             if any(keyword in local_response.lower() for keyword in exclusion_keywords):
                 return "Unable to generate visualization - no valid data returned from query"
             
@@ -287,7 +287,6 @@ def generate_response(code_type, input_text):
             print(f"Full error details: {str(e)}")
             print(f"SQL query error: {str(e)}")
             return f"""Failed to execute SQL query. Details: {str(e)}"""
-
 
 def reset_conversation():
     st.session_state.messages = []
@@ -332,18 +331,6 @@ if prompt := st.chat_input("Please ask your question:"):
                 display_text_with_images(response)
             st.session_state.messages.append({"role": "error", "content": response})
         else:
-            # code = display_code_plots(response['output'])
-            # try:
-            #     code = f"import pandas as pd\n{code.replace('fig.show()', '')}"
-            #     code += "st.plotly_chart(fig, theme='streamlit', use_container_width=True)"
-            #     st.code(code)  # DISPLAY GENERATED CODE FOR INSPECTION
-            #     exec(code)
-            #     st.session_state.messages.append({"role": "plot", "content": code})
-            # except:
-            #     response = "Please try again with a re-phrased query and more context"
-            #     with st.chat_message("error"):
-            #         display_text_with_images(response)
-            #     st.session_state.messages.append({"role": "error", "content": response})
             try:
                 # Extract code safely from response
                 if isinstance(response, dict) and 'output' in response:
@@ -361,8 +348,6 @@ if prompt := st.chat_input("Please ask your question:"):
                     f"{code.replace('fig.show()', '')}\n"
                     f"st.plotly_chart(fig, use_container_width=True)"
                 )
-                
-                # Execute with proper environment
                 exec(full_code, {'pd': pd, 'px': px, 'st': st})
                 
                 st.session_state.messages.append({"role": "plot", "content": full_code})
