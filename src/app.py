@@ -18,16 +18,22 @@ DEEPSEEK_API_KEY = st.secrets["deepseek"]["DEEPSEEK_API_KEY"]
 # TEMP CODE
 # Add this temporary test cell in your code
 import os
-from deepseek_sdk import DeepSeek
-
+from langchain_deepseek import ChatDeepSeek
 def test_deepseek():
-    client = DeepSeek(
+    client = ChatDeepSeek(
         api_key=DEEPSEEK_API_KEY,
         model="deepseek-chat",
         max_tokens=50
     )
     try:
-        response = client.generate("Hello world!")
+        messages = [
+                (
+                    "system",
+                    "You are a helpful assistant that translates English to French. Translate the user sentence.",
+                ),
+                ("human", "I love programming."),
+            ]
+        response = client.invoke(messages)
         print("API Response:", response)
         return True
     except Exception as e:
