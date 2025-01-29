@@ -15,8 +15,10 @@ import pymysql
 import time
 
 DEEPSEEK_API_KEY = st.secrets["deepseek"]["DEEPSEEK_API_KEY"]
-# TEMP CODE
-# Add this temporary test cell in your code
+st.set_page_config(page_title="SQL and Python Agent")
+
+
+
 import os
 from langchain_deepseek import ChatDeepSeek
 def test_deepseek():
@@ -27,20 +29,14 @@ def test_deepseek():
     )
     try:
         messages = [
-                (
-                    "system",
-                    "You are a helpful assistant that translates English to French. Translate the user sentence.",
-                ),
-                ("human", "I love programming."),
-            ]
+                ("system","You are a helpful assistant that translates English to French. Translate the user sentence.",),
+                ("human", "I love programming."),]
         response = client.invoke(messages)
         print("API Response:", response)
         return True
     except Exception as e:
         print("API Error:", str(e))
         return False
-
-# Run the test
 if test_deepseek():
     st.success("DeepSeek API connection successful!")
 else:
@@ -48,8 +44,6 @@ else:
 
 
 
-
-st.set_page_config(page_title="SQL and Python Agent")
 
 if "db_config" not in st.session_state:
     st.session_state.db_config = {
