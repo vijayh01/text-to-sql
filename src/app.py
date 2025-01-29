@@ -15,9 +15,36 @@ import pymysql
 import time
 
 DEEPSEEK_API_KEY = st.secrets["deepseek"]["DEEPSEEK_API_KEY"]
+# TEMP CODE
+# Add this temporary test cell in your code
+import os
+from deepseek import DeepSeekClient
+
+def test_deepseek():
+    client = DeepSeekClient(
+        api_key=DEEPSEEK_API_KEY,
+        model="deepseek-chat",
+        max_tokens=50
+    )
+    try:
+        response = client.generate("Hello world!")
+        print("API Response:", response)
+        return True
+    except Exception as e:
+        print("API Error:", str(e))
+        return False
+
+# Run the test
+if test_deepseek():
+    st.success("DeepSeek API connection successful!")
+else:
+    st.error("DeepSeek API connection failed. Check your key and credits.")
+
+
+
+
 st.set_page_config(page_title="SQL and Python Agent")
 
-# 1. Initialize session state here.
 if "db_config" not in st.session_state:
     st.session_state.db_config = {
         'USER': '',
@@ -78,7 +105,6 @@ def test_connection(config):
         return False, []
     return False, []
 
-# 4. Single button to connect/update.
 if st.sidebar.button(button_label):
     if all([user, password, host, port]):
         new_config = {
@@ -86,14 +112,12 @@ if st.sidebar.button(button_label):
             'PASSWORD': password,
             'HOST': host,
             'PORT': port,
-            # DATABASE will be selected from dropdown below, so leave it blank initially
             'DATABASE': ''
         }
         ok, db_list = test_connection(new_config)
         if ok:
             st.session_state.db_config = new_config
             st.session_state.db_connected = True
-            # Store database list in session for the dropdown
             st.session_state.databases = db_list
             st.sidebar.success("Connection test successful! Please select a database.")
         else:
@@ -102,7 +126,6 @@ if st.sidebar.button(button_label):
     else:
         st.sidebar.error("All fields are required")
 
-# 5. If connected, show the databases in a dropdown for selection.
 if st.session_state.db_connected and st.session_state.databases:
     db_choice = st.sidebar.selectbox(
         "Select Database",
@@ -112,7 +135,6 @@ if st.session_state.db_connected and st.session_state.databases:
     )
     
     if db_choice and db_choice != st.session_state.db_config['DATABASE']:
-        # Update the config to the selected DB
         st.session_state.db_config['DATABASE'] = db_choice
         try:
             st.session_state.sql_agent = initialize_sql_agent(st.session_state.db_config)
@@ -122,7 +144,6 @@ if st.session_state.db_connected and st.session_state.databases:
             st.session_state.db_config['DATABASE'] = ''
             st.sidebar.error(f"Connection to {db_choice} failed: {str(e)}")
 
-# Main page
 st.title("SQL and Python Agent")
 st.write("This agent can help you with SQL queries and Python code for data analysis. Configure your MySQL database connection using the sidebar.")
 
@@ -134,7 +155,6 @@ if st.session_state.db_connected and st.session_state.db_config['DATABASE']:
 else:
     st.warning("Not connected. Provide credentials and click the button in the sidebar.")
 
-# Initialize all session state variables
 if 'db_connection' not in st.session_state:
     st.session_state.db_connection = None
 if 'agent_memory_sql' not in st.session_state:
@@ -144,7 +164,6 @@ if 'agent_memory_python' not in st.session_state:
 if 'connection_tested' not in st.session_state:
     st.session_state.connection_tested = False
 
-# Add connection management functions
 def create_db_connection(config):
     """Create and return database connection"""
     try:
@@ -170,11 +189,9 @@ def verify_connection():
         return False
         
     try:
-        # Test connection with a simple query
         st.session_state.db_connection.run("SELECT 1")
         return True
     except:
-        # Try to reconnect
         st.session_state.db_connection = create_db_connection(st.session_state.db_config)
         return st.session_state.db_connection is not None
 
@@ -198,23 +215,18 @@ def execute_query(query):
             st.error("Connection verification failed")
             return None
 
-# Suppress warnings
 warnings.filterwarnings("ignore")
 
-# Configure paths
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.join(current_dir, "..")
 sys.path.insert(0, parent_dir)
 
-# Set environment variables
 os.environ['DEEPSEEK_API_KEY'] = DEEPSEEK_API_KEY
 
 
-# Initialize session state
 if 'messages' not in st.session_state:
     st.session_state.messages = []
 
-# Initialize agents only after credentials are available
 if 'db_config' in st.session_state:
     if 'agent_memory_sql' not in st.session_state:
         st.session_state.agent_memory_sql = initialize_sql_agent(st.session_state.db_config)
@@ -232,28 +244,17 @@ else:
 def generate_response(code_type, input_text):
     """Generate responses for both general and database-specific queries"""
     
-    # General greetings and help messages
     greetings = ['hello', 'hi', 'hey', 'help', 'what can you do']
     if input_text.lower() in greetings:
-        return """Hello! I am a SQL and Python agent designed to help you with:
-            1. SQL queries and database analysis
-            2. Python data visualization
-            3. General database questions
-
-            To get started with database operations, please configure your database connection in the sidebar.
-            You can also ask me general questions about SQL, Python, or data analysis!
-        """
+        return """Hello! I am a SQL and Python agent designed to help you with:SQL queries and database analysis, Python data visualization, and General database questions.To get started with database operations, please configure your database connection in the sidebar.You can also ask me general questions about SQL, Python, or data analysis!"""
     
-    # Check if database is configured
     if not st.session_state.get('sql_agent'):
         return "Please configure and connect to a database using the sidebar before running queries."
 
-    # Sanitize input
     local_prompt = unidecode.unidecode(input_text)
     
     if code_type == "python":
         try:
-            # First get SQL query result
             sql_response = st.session_state.sql_agent.invoke({"input": local_prompt})
             if not sql_response or 'output' not in sql_response:
                 return "Failed to get SQL query results"
@@ -261,13 +262,11 @@ def generate_response(code_type, input_text):
             local_response = sql_response['output']
             print("SQL Response->", local_response)
             
-            # Check for invalid/error responses
             exclusion_keywords = ["please provide", "don't know", "more context", 
                                 "provide more", "vague request", "no results"]
             if any(keyword in local_response.lower() for keyword in exclusion_keywords):
                 return "Unable to generate visualization - no valid data returned from query"
             
-            # Generate visualization
             viz_prompt = {"input": "Write code in python to plot the following data\n\n" + local_response}
             return st.session_state.python_agent.invoke(viz_prompt)
             
@@ -275,7 +274,7 @@ def generate_response(code_type, input_text):
             print(f"Error generating response: {str(e)}")
             return "Failed to generate visualization"
             
-    else:  # SQL query
+    else:  
         try:
             return st.session_state.sql_agent.run(local_prompt)
         except Exception as e:
@@ -297,7 +296,6 @@ col1, col2 = st.columns([3, 1])
 with col2:
     st.button("Reset Chat", on_click=reset_conversation)
 
-# Display chat messages from history
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         if message["role"] in ("assistant", "error"):
@@ -307,9 +305,7 @@ for message in st.session_state.messages:
         else:
             st.markdown(message["content"])
 
-# Accept user input
 if prompt := st.chat_input("Please ask your question:"):
-    # Display user message in chat
     with st.chat_message("user", avatar="🚀"):
         st.markdown(prompt)
     st.session_state.messages.append({"role": "user", "content": prompt})
@@ -357,10 +353,8 @@ if prompt := st.chat_input("Please ask your question:"):
             display_text_with_images(response)
         st.session_state.messages.append({"role": "assistant", "content": response})
 
-# Initialize session state for query
 if 'query' not in st.session_state:
     st.session_state.query = ''
 
-# Initialize session state with unique widget keys
 if 'query_input_key' not in st.session_state:
     st.session_state.query_input_key = 0
