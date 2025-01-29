@@ -17,19 +17,42 @@ CUSTOM_SUFFIX = """Begin!
 
 Relevant pieces of previous conversation:
 {chat_history}
-(Note: Only reference this information if it is relevant to the current query.)
 
 Question: {input}
-Thought Process: It is imperative that I do not fabricate information not present in any table or engage in hallucination; maintaining trustworthiness is crucial.
-In SQL queries involving string or TEXT comparisons like first_name, I must use the `LOWER()` function for case-insensitive comparisons and the `LIKE` operator for fuzzy matching. 
-Queries for return percentage is defined as total number of returns divided by total number of orders. You can join orders table with users table to know more about each user.
-Make sure that query is related to the SQL database and tables you are working with.
-If the result is empty, the Answer should be "No results found". DO NOT hallucinate an answer if there is no result.
 
-My final response should STRICTLY be the output of SQL query.
+Always follow these rules:
+1. If showing counts/numbers, use format: "Result: [NUMBER]"
+2. For list results, use: "Result: [ITEM1], [ITEM2], ..."
+3. For complex results, create a markdown table
+4. If no results found, say "Result: No data found"
 
-{agent_scratchpad}
-"""
+Example response for customer count:
+Thought: I need to count customers in China
+Action: Query database
+Observation: 100,939
+Final Answer: Result: 100,939
+
+{agent_scratchpad}"""
+
+# CUSTOM_SUFFIX = """Begin!
+
+# Relevant pieces of previous conversation:
+# {chat_history}
+# (Note: Only reference this information if it is relevant to the current query.)
+
+# Question: {input}
+# Thought Process: It is imperative that I do not fabricate information not present in any table or engage in hallucination; maintaining trustworthiness is crucial.
+# In SQL queries involving string or TEXT comparisons like first_name, I must use the `LOWER()` function for case-insensitive comparisons and the `LIKE` operator for fuzzy matching. 
+# Queries for return percentage is defined as total number of returns divided by total number of orders. You can join orders table with users table to know more about each user.
+# Make sure that query is related to the SQL database and tables you are working with.
+# If the result is empty, the Answer should be "No results found". DO NOT hallucinate an answer if there is no result.
+
+# My final response should STRICTLY be the output of SQL query.
+
+# {agent_scratchpad}
+# """
+
+
 DEEPSEEK_API_KEY = st.secrets["deepseek"]["DEEPSEEK_API_KEY"]
 langchain_chat_kwargs = {
     "temperature": 0,
