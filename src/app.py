@@ -6,7 +6,6 @@ import streamlit as st
 import unidecode
 import pymysql
 from pymysql import Error
-from sqlalchemy.sql import text
 from langchain_community.utilities import SQLDatabase
 import urllib.parse
 from helper import display_code_plots, display_text_with_images

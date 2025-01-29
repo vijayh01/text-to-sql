@@ -1,5 +1,6 @@
 import urllib.parse
 from langchain import hub 
+from sqlalchemy import text
 from langchain.agents import AgentExecutor, create_openai_functions_agent
 from langchain.agents import create_sql_agent
 from langchain.agents.agent_types import AgentType
@@ -146,7 +147,7 @@ def initialize_sql_agent(db_config):
         db = SQLDatabase.from_uri(connection_string)
         with db._engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-            
+
         # Create toolkit with LLM
         toolkit = SQLDatabaseToolkit(
             db=db,
