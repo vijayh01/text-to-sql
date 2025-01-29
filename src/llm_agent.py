@@ -172,9 +172,13 @@ def initialize_sql_agent(db_config):
             input_variables=["input", "agent_scratchpad", "chat_history"], 
             suffix=CUSTOM_SUFFIX, 
             memory=memory, 
-            agent_executor_kwargs={"memory": memory}, 
+            agent_executor_kwargs={"memory": memory,
+                                   "handle_parsing_errors": True,  
+                                   "return_intermediate_steps": True  
+                                   }, 
             verbose=True,
-            handle_parsing_errors=True
+            handle_parsing_errors="Check your output and make sure it conforms!",
+            max_iterations=5
         )
     except Exception as e:
         raise ValueError(f"Failed to initialize SQL agent: {str(e)}")
