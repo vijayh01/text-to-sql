@@ -4,12 +4,28 @@ import streamlit as st
 
 
 def display_code_plots(text):
-    pattern = r'```python\s(.*?)```'
-    matches = re.findall(pattern, text, re.DOTALL)
-    if not matches:
-        return None
-    else:
-        return matches[0]
+    # Handle multiple code block formats
+    patterns = [
+        r'```python\s*(.*?)```',  # Standard markdown
+        r'```\s*(.*?)```',        # No language specified
+        r'%%python\n(.*?)\n'      # Jupyter-style
+    ]
+    
+    for pattern in patterns:
+        matches = re.findall(pattern, text, re.DOTALL)
+        if matches:
+            return matches[0].strip()
+    
+    # Fallback: Try to find indented code blocks
+    code_lines = []
+    in_code = False
+    for line in text.split('\n'):
+        if line.strip().startswith(('import ', 'def ', 'class ', 'fig =')):
+            in_code = True
+        if in_code:
+            code_lines.append(line)
+    
+    return '\n'.join(code_lines) if code_lines else None
 
 
 def display_text_with_images(text):

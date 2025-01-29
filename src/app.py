@@ -338,24 +338,45 @@ if prompt := st.chat_input("Please ask your question:"):
                 else:
                     raw_code = str(response)
 
-                # Extract code block from markdown
+                # Extract code block from markdown with improved parsing
                 code = display_code_plots(raw_code)
+                if not code:
+                    raise ValueError("No valid code block found in response")
+                
+                # Sanitize and validate code
+                sanitized_code = code.replace('fig.show()', '')
+                if 'fig = ' not in sanitized_code:
+                    raise ValueError("Plot definition missing in code")
                 
                 # Add necessary imports and Streamlit integration
                 full_code = (
                     f"import pandas as pd\n"
                     f"import plotly.express as px\n"
-                    f"{code.replace('fig.show()', '')}\n"
+                    f"{sanitized_code}\n"
                     f"st.plotly_chart(fig, use_container_width=True)"
                 )
-                exec(full_code, {'pd': pd, 'px': px, 'st': st})
+                
+                # Create execution environment with safe globals
+                exec_globals = {
+                    'pd': pd,
+                    'px': px,
+                    'st': st,
+                    'fig': None
+                }
+                exec(full_code, exec_globals)
+                
+                # Verify plot was created
+                if not exec_globals['fig']:
+                    raise ValueError("Plot figure not generated")
                 
                 st.session_state.messages.append({"role": "plot", "content": full_code})
                 
             except Exception as e:
                 error_msg = f"Visualization error: {str(e)}"
                 st.error(error_msg)
+                st.code(full_code)  # Show problematic code
                 st.session_state.messages.append({"role": "error", "content": error_msg})
+
     else:
         if len(st.session_state.messages) > 1:
             context_length = 0
