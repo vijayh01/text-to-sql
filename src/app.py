@@ -18,10 +18,10 @@ DEEPSEEK_API_KEY = st.secrets["deepseek"]["DEEPSEEK_API_KEY"]
 # TEMP CODE
 # Add this temporary test cell in your code
 import os
-from deepseek import DeepSeekClient
+from deepseek_sdk import DeepSeek
 
 def test_deepseek():
-    client = DeepSeekClient(
+    client = DeepSeek(
         api_key=DEEPSEEK_API_KEY,
         model="deepseek-chat",
         max_tokens=50
