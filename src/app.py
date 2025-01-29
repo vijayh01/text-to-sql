@@ -279,7 +279,7 @@ def generate_response(code_type, input_text):
             return st.session_state.sql_agent.run(local_prompt)
         except Exception as e:
             print(f"SQL query error: {str(e)}")
-            return """Failed to execute SQL query. Ensure you have enough OpenAI API credits. This is most likely to be the issue."""
+            return """Failed to execute SQL query. Ensure you have enough DeepSeek API credits. This is most likely to be the issue."""
 
 
 def reset_conversation():
@@ -297,7 +297,7 @@ with col2:
     st.button("Reset Chat", on_click=reset_conversation)
 
 for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
+    with st.chat_message(message["role"], avatar="🚀" if message["role"] == "user" else "❇️"):
         if message["role"] in ("assistant", "error"):
             display_text_with_images(message["content"])
         elif message["role"] == "plot":
