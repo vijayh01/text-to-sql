@@ -58,21 +58,17 @@ def test_connection(config):
 
         # If we succeed, fetch list of databases for the dropdown
         try:
-            connection = pymysql.connect(
+            with pymysql.connect(
                 host=config['HOST'],
                 user=config['USER'],
                 password=config['PASSWORD'],
-                port=int(config['PORT']),
+                port=int(config['PORT']),  # Convert port to integer
                 cursorclass=pymysql.cursors.DictCursor
-
-            )
-            if connection.is_connected():
-                cursor = connection.cursor()
-                cursor.execute("SHOW DATABASES")
-                dbs = [db[0] for db in cursor.fetchall() 
-                       if db[0] not in ('sys', 'mysql','performance_schema','information_schema')]
-                cursor.close()
-                connection.close()
+            ) as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute("SHOW DATABASES")
+                    dbs = [db['Database'] for db in cursor.fetchall() 
+                        if db['Database'] not in ('sys', 'mysql','performance_schema','information_schema')]
                 return True, dbs
         except Error as e:
             st.sidebar.error(f"Error fetching databases: {e}")
