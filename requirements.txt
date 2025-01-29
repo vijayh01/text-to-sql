@@ -1,33 +1,30 @@
-# Core Streamlit and Database
+# Core
 streamlit==1.32.2
-mysqlclient==2.2.4
+python-dotenv==1.0.1
+
+# Database
 pymysql==1.1.1
 sqlalchemy==2.0.31
 
-# LangChain Ecosystem (updated versions)
+# LangChain
 langchain-core==0.3.30
 langchain-community==0.3.27
 langchain-experimental==0.0.64
 langchain-openai==0.1.17
 langchain-text-splitters==0.2.1
-langchain-deepseek-official==0.1.0  # Official DeepSeek integration
-langsmith==0.1.93
+langchain-deepseek-official==0.1.0
+langsmith==0.1.125
 langchainhub==0.1.20
 
-# DeepSeek SDK
-deepseek-sdk==1.2.0
-
-# Essential Dependencies
-python-dotenv==1.0.1
-unidecode==1.3.8
-tiktoken==0.7.0
-openai==1.36.0
-numpy==1.26.4
-pandas==2.2.2
+# Visualization
 plotly==5.22.0
 
-# Runtime Requirements
+# DeepSeek
+deepseek-sdk==1.2.0
+
+# Essential utilities
 protobuf==4.25.3
-pyyaml==6.0.1
-requests==2.32.3
-urllib3==2.2.2
+tiktoken==0.7.0
+numpy==1.26.4
+pandas==2.2.2
+unidecode==1.3.8
