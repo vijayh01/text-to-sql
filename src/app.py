@@ -62,7 +62,7 @@ def test_connection(config):
                 host=config['HOST'],
                 user=config['USER'],
                 password=config['PASSWORD'],
-                port=config['PORT'],
+                port=int(config['PORT']),
                 cursorclass=pymysql.cursors.DictCursor
 
             )
