@@ -17,14 +17,13 @@ import time
 DEEPSEEK_API_KEY = st.secrets["deepseek"]["DEEPSEEK_API_KEY"]
 st.set_page_config(page_title="SQL and Python Agent")
 
-
-
+### TEST DEEPSEEK API CONNECTION ###
 import os
 from langchain_deepseek import ChatDeepSeek
 def test_deepseek():
     client = ChatDeepSeek(
         api_key=DEEPSEEK_API_KEY,
-        model="deepseek-chat",
+        model=LLM_MODEL_NAME,
         max_tokens=50
     )
     try:
@@ -41,7 +40,7 @@ if test_deepseek():
     st.success("DeepSeek API connection successful!")
 else:
     st.error("DeepSeek API connection failed. Check your key and credits.")
-
+### TEST DEEPSEEK API CONNECTION ###
 
 
 
@@ -144,7 +143,7 @@ if st.session_state.db_connected and st.session_state.databases:
             st.session_state.db_config['DATABASE'] = ''
             st.sidebar.error(f"Connection to {db_choice} failed: {str(e)}")
 
-st.title("SQL and Python Agent")
+st.title("DEEPSEEK SQL DASHBOARD AGENT")
 st.write("This agent can help you with SQL queries and Python code for data analysis. Configure your MySQL database connection using the sidebar.")
 
 if st.session_state.db_connected and st.session_state.db_config['DATABASE']:
