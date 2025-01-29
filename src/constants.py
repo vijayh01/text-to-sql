@@ -1,5 +1,5 @@
-# LLM_MODEL_NAME = "gpt-4-0125-preview"
-LLM_MODEL_NAME = "deepseek-reasoner"
+LLM_MODEL_NAME = "gpt-4-0125-preview"
+# LLM_MODEL_NAME = "deepseek-reasoner"
 CUSTOM_SUFFIX = """Begin!
 
 Relevant pieces of previous conversation:

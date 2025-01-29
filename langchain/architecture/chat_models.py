@@ -7,6 +7,6 @@ if not os.environ.get("OPENAI_API_KEY"):
   os.environ["OPENAI_API_KEY"] = getpass.getpass("Enter API key for OpenAI: ")
 
 model = ChatOpenAI(model="gpt-4o-mini")
-response = model.invoke("Hello, how are you?") 
+response = model.invoke("Who's the POTUS?") 
 print(response.content)
 
