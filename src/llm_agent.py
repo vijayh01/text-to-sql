@@ -146,7 +146,7 @@ def initialize_python_agent(agent_llm_name: str = LLM_MODEL_NAME):
     4. ALWAYS include actual data from the query
     5. ALWAYS include proper labels and titles
     6. NEVER use fig.show()"""
-    
+
     base_prompt = hub.pull("langchain-ai/openai-functions-template")
     prompt = base_prompt.partial(instructions=instructions)
     tools = [PythonREPLTool()]
@@ -212,12 +212,12 @@ def initialize_sql_agent(db_config):
             memory=memory, 
             agent_executor_kwargs={"memory": memory,
                                    "handle_parsing_errors": True,  
-                                   "return_intermediate_steps": False,
-                                   "early_stopping_method": "generate"   
+                                   "return_intermediate_steps": False
                                    }, 
             verbose=True,
             handle_parsing_errors=True, #"Check your output and make sure it conforms!",
-            max_iterations=5
+            max_iterations=5,
+            "early_stopping_method": "generate"  
         )
     except Exception as e:
         raise ValueError(f"Failed to initialize SQL agent: {str(e)}")
