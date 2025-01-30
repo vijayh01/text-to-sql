@@ -217,7 +217,7 @@ def initialize_sql_agent(db_config):
             verbose=True,
             handle_parsing_errors=True, #"Check your output and make sure it conforms!",
             max_iterations=5,
-            "early_stopping_method": "generate"  
+            early_stopping_method: "generate"  
         )
     except Exception as e:
         raise ValueError(f"Failed to initialize SQL agent: {str(e)}")
