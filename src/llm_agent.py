@@ -200,8 +200,7 @@ def initialize_sql_agent(db_config):
             table_name="message_store",
             session_id_field_name="session_id"
         )
-        memory = ConversationBufferMemory(memory_key="chat_history", input_key='input', chat_memory=message_history, return_messages=False) #added recently
-
+        memory = ConversationBufferMemory(memory_key="chat_history", input_key='input', chat_memory=message_history, return_messages=False)
         # Create and return agent
         return create_sql_agent(
         llm=llm,

@@ -239,6 +239,56 @@ if 'db_config' in st.session_state:
 else:
     st.warning("Please configure database credentials first")
 
+# def generate_response(code_type, input_text):
+#     """Generate responses for both general and database-specific queries"""
+    
+#     greetings = ['hello', 'hi', 'hey', 'help', 'what can you do']
+#     if input_text.lower() in greetings:
+#         return """Hello! I am a SQL and Python agent designed to help you with:
+#         SQL queries and database analysis, Python data visualization, and General database questions.
+#         To get started with database operations, please configure your database connection in the sidebar.
+#         You can also ask me general questions about SQL, Python, or data analysis!"""
+    
+#     if not st.session_state.get('sql_agent'):
+#         return "Please configure and connect to a database using the sidebar before running queries."
+
+#     local_prompt = unidecode.unidecode(input_text)
+    
+#     if code_type == "python":
+#         try:
+#             sql_response = st.session_state.sql_agent.invoke({"input": local_prompt})
+#             if not sql_response or 'output' not in sql_response:
+#                 return "Failed to get SQL query results"
+                
+#             local_response = sql_response['output']
+#             print("SQL Response->", local_response)
+            
+#             exclusion_keywords = ["please provide", "don't know", "more context", 
+#                                   "provide more", "vague request", "no results"]
+#             if any(keyword in local_response.lower() for keyword in exclusion_keywords):
+#                 return "Unable to generate visualization - no valid data returned from query"
+            
+#             viz_prompt = {"input": "Write code in python to plot the following data\n\n" + local_response}
+#             return st.session_state.python_agent.invoke(viz_prompt)
+            
+#         except Exception as e:
+#             print(f"Error generating response: {str(e)}")
+#             return "Failed to generate visualization"
+            
+#     else:  
+#         try:
+#             response = st.session_state.sql_agent.invoke({"input": local_prompt})
+            
+#             if 'output' in response:
+#                 return response['output']
+#             else:
+#                 return "Received unexpected response format from agent"
+#         except Exception as e:
+#             print(f"Full error details: {str(e)}")
+#             print(f"SQL query error: {str(e)}")
+#             return f"""Failed to execute SQL query. Details: {str(e)}"""
+
+
 def generate_response(code_type, input_text):
     """Generate responses for both general and database-specific queries"""
     
@@ -258,6 +308,8 @@ def generate_response(code_type, input_text):
         try:
             sql_response = st.session_state.sql_agent.invoke({"input": local_prompt})
             if not sql_response or 'output' not in sql_response:
+                st.error("No output field in SQL agent response.")
+                st.write("Full SQL Response:", sql_response)
                 return "Failed to get SQL query results"
                 
             local_response = sql_response['output']
@@ -279,6 +331,9 @@ def generate_response(code_type, input_text):
         try:
             response = st.session_state.sql_agent.invoke({"input": local_prompt})
             
+            # Log the full response for debugging
+            print("Full SQL Agent Response:", response)
+            
             if 'output' in response:
                 return response['output']
             else:
@@ -287,6 +342,8 @@ def generate_response(code_type, input_text):
             print(f"Full error details: {str(e)}")
             print(f"SQL query error: {str(e)}")
             return f"""Failed to execute SQL query. Details: {str(e)}"""
+
+
 
 def reset_conversation():
     st.session_state.messages = []
