@@ -213,7 +213,6 @@ def initialize_sql_agent(db_config):
         handle_parsing_errors=True,
         agent_executor_kwargs={
             "memory": memory,
-            "max_execution_time": 30,
             "handle_parsing_errors": True
         }
     )
