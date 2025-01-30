@@ -204,20 +204,18 @@ def initialize_sql_agent(db_config):
 
         # Create and return agent
         return create_sql_agent(
-            llm=llm,
-            toolkit=toolkit,
-            agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-            input_variables=["input", "agent_scratchpad", "chat_history"], 
-            suffix=CUSTOM_SUFFIX, 
-            memory=memory, 
-            agent_executor_kwargs={"memory": memory,
-                                   "handle_parsing_errors": True,  
-                                   "return_intermediate_steps": False
-                                   }, 
-            verbose=True,
-            handle_parsing_errors=True, #"Check your output and make sure it conforms!",
-            max_iterations=5,
-            early_stopping_method="generate"  
-        )
+        llm=llm,
+        toolkit=toolkit,
+        agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        suffix=CUSTOM_SUFFIX,
+        verbose=True,
+        max_iterations=5,
+        handle_parsing_errors=True,
+        agent_executor_kwargs={
+            "memory": memory,
+            "max_execution_time": 30,
+            "handle_parsing_errors": True
+        }
+    )
     except Exception as e:
         raise ValueError(f"Failed to initialize SQL agent: {str(e)}")
